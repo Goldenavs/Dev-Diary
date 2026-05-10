@@ -27,7 +27,7 @@ jobs:
         run: node generate-log.js
         env:
           # This passes GitHub's automatic token into your Node script
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Commit and Push
         run: |
