@@ -1,11 +1,13 @@
-# .github/workflows/diary.yml
 name: Automated Developer Diary
 
 on:
   schedule:
-    # Runs at 23:50 UTC every day
     - cron: '50 23 * * *'
-  workflow_dispatch: # Gives you a button on GitHub to trigger it manually
+  workflow_dispatch:
+
+# 1. Force the GitHub Actions runner to use Node 24
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-commit:
@@ -20,7 +22,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # 2. Update the Node version for your script to 24
+          node-version: '24'
 
       - name: Generate Daily Log
         run: node generate-log.js
