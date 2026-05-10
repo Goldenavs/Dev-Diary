@@ -1,0 +1,65 @@
+// generate-log.js
+const fs = require('fs');
+const path = require('path');
+
+// Configuration
+const USERNAME = 'Goldenavs'; // <-- Change this!
+const API_URL = `https://api.github.com/users/${USERNAME}/events/public`;
+
+async function fetchDailyActivity() {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        
+        const events = await response.json();
+        
+        // Filter events from the last 24 hours
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const recentEvents = events.filter(event => new Date(event.created_at) > oneDayAgo);
+
+        generateMarkdown(recentEvents);
+    } catch (error) {
+        console.error("Failed to fetch activity:", error);
+        process.exit(1);
+    }
+}
+
+function generateMarkdown(events) {
+    const dateStr = new Date().toISOString().split('T')[0];
+    let markdownContent = `# Developer Diary - ${dateStr}\n\n`;
+
+    if (events.length === 0) {
+        markdownContent += `*Rest day. Brain recharging. Focused on planning and architecture today.*\n`;
+    } else {
+        markdownContent += `### Today's Activity Summary\n\n`;
+        
+        const repoActivity = {};
+        events.forEach(event => {
+            const repoName = event.repo.name;
+            if (!repoActivity[repoName]) repoActivity[repoName] = [];
+            
+            if (event.type === 'PushEvent') {
+                event.payload.commits.forEach(commit => {
+                    repoActivity[repoName].push(`- 💻 Committed: ${commit.message}`);
+                });
+            } else if (event.type === 'IssuesEvent') {
+                repoActivity[repoName].push(`- 🐛 Issue ${event.payload.action}: ${event.payload.issue.title}`);
+            }
+        });
+
+        for (const [repo, actions] of Object.entries(repoActivity)) {
+            markdownContent += `#### 📁 [${repo}](https://github.com/${repo})\n`;
+            actions.forEach(action => markdownContent += `${action}\n`);
+            markdownContent += '\n';
+        }
+    }
+
+    const dir = path.join(__dirname, 'logs');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+
+    const filePath = path.join(dir, `${dateStr}.md`);
+    fs.writeFileSync(filePath, markdownContent);
+    console.log(`Successfully generated log for ${dateStr}`);
+}
+
+fetchDailyActivity();

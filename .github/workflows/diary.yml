@@ -1,0 +1,39 @@
+# .github/workflows/diary.yml
+name: Automated Developer Diary
+
+on:
+  schedule:
+    # Runs at 23:50 UTC every day
+    - cron: '50 23 * * *'
+  workflow_dispatch: # Gives you a button on GitHub to trigger it manually
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write 
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate Daily Log
+        run: node generate-log.js
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "Diary Bot"
+          git add logs/
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "docs: auto-generate daily developer log [skip ci]"
+            git push
+          fi
