@@ -66,7 +66,7 @@ function generateMarkdown(events) {
             const repoName = event.repo.name;
             if (!repoActivity[repoName]) repoActivity[repoName] = [];
             
-            if (event.type === 'PushEvent') {
+            if (event.type === 'PushEvent' && event.payload.commits) {
                 event.payload.commits.forEach(commit => {
                     repoActivity[repoName].push(`- 💻 Committed: ${commit.message}`);
                 });
