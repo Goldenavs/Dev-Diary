@@ -2,44 +2,57 @@
 const fs = require('fs');
 const path = require('path');
 
+console.log("🚀 Booting up Developer Diary Bot...");
+
 // Configuration
-const USERNAME = 'Goldenavs'; // <-- Ensure this is your actual username!
+const USERNAME = 'Goldenavs'; 
 const API_URL = `https://api.github.com/users/${USERNAME}/events/public`;
 
 async function fetchDailyActivity() {
     try {
-        // Build headers for authentication to bypass IP rate limits
+        console.log(`🔍 Target API URL: ${API_URL}`);
+        
         const headers = {
             'Accept': 'application/vnd.github.v3+json'
         };
         
-        // Inject token if it exists in the environment
-        if (process.env.GITHUB_TOKEN) {
-            headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
+        // 1. DIAGNOSE THE TOKEN
+        const token = process.env.GITHUB_TOKEN;
+        if (!token) {
+            console.log("❌ ERROR: NO TOKEN DETECTED! The script cannot see your secret.");
+        } else {
+            console.log(`🔑 Token found! Length: ${token.length} chars. Starts with: ${token.substring(0, 4)}***`);
+            headers['Authorization'] = `Bearer ${token}`;
         }
 
+        console.log("📡 Sending request to GitHub...");
         const response = await fetch(API_URL, { headers });
+        
+        // 2. DIAGNOSE THE API RESPONSE
+        console.log(`📥 API Response Code: ${response.status} ${response.statusText}`);
         
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`API Error: ${response.status} - ${errorText}`);
+            throw new Error(`GitHub API rejected us: HTTP ${response.status} -> ${errorText}`);
         }
         
         const events = await response.json();
+        console.log(`✅ Success! Fetched ${events.length} total events from GitHub.`);
         
-        // Filter events from the last 24 hours
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const recentEvents = events.filter(event => new Date(event.created_at) > oneDayAgo);
+        console.log(`📅 Found ${recentEvents.length} events strictly from the last 24 hours.`);
 
         generateMarkdown(recentEvents);
     } catch (error) {
-        console.error("Failed to fetch activity:");
-        console.error(error);
-        process.exit(1); // This is what caused the exit code 1
+        console.error("\n💀 FATAL CRASH REPORT:");
+        console.error(error.message);
+        process.exit(1); 
     }
 }
 
 function generateMarkdown(events) {
+    console.log("✍️ Generating markdown file...");
     const dateStr = new Date().toISOString().split('T')[0];
     let markdownContent = `# Developer Diary - ${dateStr}\n\n`;
 
@@ -74,7 +87,7 @@ function generateMarkdown(events) {
 
     const filePath = path.join(dir, `${dateStr}.md`);
     fs.writeFileSync(filePath, markdownContent);
-    console.log(`Successfully generated log for ${dateStr}`);
+    console.log(`🎉 SUCCESS! File created at: logs/${dateStr}.md`);
 }
 
 fetchDailyActivity();
