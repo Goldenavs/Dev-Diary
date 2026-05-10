@@ -5,7 +5,6 @@ on:
     - cron: '50 23 * * *'
   workflow_dispatch:
 
-# 1. Force the GitHub Actions runner to use Node 24
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -22,11 +21,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # 2. Update the Node version for your script to 24
           node-version: '24'
 
       - name: Generate Daily Log
         run: node generate-log.js
+        env:
+          # This passes GitHub's automatic token into your Node script
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit and Push
         run: |

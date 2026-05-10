@@ -3,13 +3,27 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const USERNAME = 'Goldenavs'; // <-- Change this!
+const USERNAME = 'YOUR_GITHUB_USERNAME'; // <-- Ensure this is your actual username!
 const API_URL = `https://api.github.com/users/${USERNAME}/events/public`;
 
 async function fetchDailyActivity() {
     try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        // Build headers for authentication to bypass IP rate limits
+        const headers = {
+            'Accept': 'application/vnd.github.v3+json'
+        };
+        
+        // Inject token if it exists in the environment
+        if (process.env.GITHUB_TOKEN) {
+            headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
+        }
+
+        const response = await fetch(API_URL, { headers });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error: ${response.status} - ${errorText}`);
+        }
         
         const events = await response.json();
         
@@ -19,8 +33,9 @@ async function fetchDailyActivity() {
 
         generateMarkdown(recentEvents);
     } catch (error) {
-        console.error("Failed to fetch activity:", error);
-        process.exit(1);
+        console.error("Failed to fetch activity:");
+        console.error(error);
+        process.exit(1); // This is what caused the exit code 1
     }
 }
 
