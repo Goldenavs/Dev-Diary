@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const USERNAME = 'YOUR_GITHUB_USERNAME'; // <-- Ensure this is your actual username!
+const USERNAME = 'Goldenavs'; // <-- Ensure this is your actual username!
 const API_URL = `https://api.github.com/users/${USERNAME}/events/public`;
 
 async function fetchDailyActivity() {
