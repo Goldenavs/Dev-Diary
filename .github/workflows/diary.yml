@@ -31,8 +31,8 @@ jobs:
 
       - name: Commit and Push
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "Diary Bot"
+          git config --local user.email "navejohnmichael@gmail.com"
+          git config --local user.name "Goldenavs"
           git add logs/
           
           if git diff --staged --quiet; then
