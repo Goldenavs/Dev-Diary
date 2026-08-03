@@ -53,7 +53,14 @@ async function fetchDailyActivity() {
 
 function generateMarkdown(events) {
     console.log("✍️ Generating markdown file...");
-    const dateStr = new Date().toISOString().split('T')[0];
+    
+    // Extract date components for nested folders
+    const today = new Date();
+    const year = today.getFullYear().toString();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = today.toISOString().split('T')[0];
+    
     let markdownContent = `# Developer Diary - ${dateStr}\n\n`;
 
     if (events.length === 0) {
@@ -82,12 +89,16 @@ function generateMarkdown(events) {
         }
     }
 
-    const dir = path.join(__dirname, 'logs');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    // New directory logic: logs/YYYY/MM
+    const dir = path.join(__dirname, 'logs', year, month);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
 
-    const filePath = path.join(dir, `${dateStr}.md`);
+    // Save as DD.md inside the new directory
+    const filePath = path.join(dir, `${day}.md`);
     fs.writeFileSync(filePath, markdownContent);
-    console.log(`🎉 SUCCESS! File created at: logs/${dateStr}.md`);
+    console.log(`🎉 SUCCESS! File created at: logs/${year}/${month}/${day}.md`);
 }
 
 fetchDailyActivity();
