@@ -5,17 +5,17 @@ const path = require('path');
 console.log("🚀 Booting up Developer Diary Bot...");
 
 // Configuration
-const USERNAME = 'Goldenavs'; 
+const USERNAME = 'Goldenavs';
 const API_URL = `https://api.github.com/users/${USERNAME}/events/public`;
 
 async function fetchDailyActivity() {
     try {
         console.log(`🔍 Target API URL: ${API_URL}`);
-        
+
         const headers = {
             'Accept': 'application/vnd.github.v3+json'
         };
-        
+
         // 1. DIAGNOSE THE TOKEN
         const token = process.env.GITHUB_TOKEN;
         if (!token) {
@@ -27,18 +27,18 @@ async function fetchDailyActivity() {
 
         console.log("📡 Sending request to GitHub...");
         const response = await fetch(API_URL, { headers });
-        
+
         // 2. DIAGNOSE THE API RESPONSE
         console.log(`📥 API Response Code: ${response.status} ${response.statusText}`);
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`GitHub API rejected us: HTTP ${response.status} -> ${errorText}`);
         }
-        
+
         const events = await response.json();
         console.log(`✅ Success! Fetched ${events.length} total events from GitHub.`);
-        
+
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const recentEvents = events.filter(event => new Date(event.created_at) > oneDayAgo);
         console.log(`📅 Found ${recentEvents.length} events strictly from the last 24 hours.`);
@@ -47,32 +47,36 @@ async function fetchDailyActivity() {
     } catch (error) {
         console.error("\n💀 FATAL CRASH REPORT:");
         console.error(error.message);
-        process.exit(1); 
+        process.exit(1);
     }
 }
 
 function generateMarkdown(events) {
     console.log("✍️ Generating markdown file...");
-    
-    // Extract date components for nested folders
-    const today = new Date();
+
+    // Lock the Date object to GMT+8 (Asia/Manila)
+    const localTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" });
+    const today = new Date(localTimeStr);
+
     const year = today.getFullYear().toString();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
-    const dateStr = today.toISOString().split('T')[0];
-    
+
+    // Manually construct the date string to avoid toISOString() UTC conversion backfires
+    const dateStr = `${year}-${month}-${day}`;
+
     let markdownContent = `# Developer Diary - ${dateStr}\n\n`;
 
     if (events.length === 0) {
         markdownContent += `*Rest day. Brain recharging. Focused on planning and architecture today.*\n`;
     } else {
         markdownContent += `### Today's Activity Summary\n\n`;
-        
+
         const repoActivity = {};
         events.forEach(event => {
             const repoName = event.repo.name;
             if (!repoActivity[repoName]) repoActivity[repoName] = [];
-            
+
             if (event.type === 'PushEvent' && event.payload.commits) {
                 event.payload.commits.forEach(commit => {
                     repoActivity[repoName].push(`- 💻 Committed: ${commit.message}`);
